@@ -10,19 +10,27 @@
  */
 #pragma once
 
-vi pi(const string& s) {
-	vi p(sz(s));
-	rep(i,1,sz(s)) {
-		int g = p[i-1];
-		while (g && s[i] != s[g]) g = p[g-1];
-		p[i] = g + (s[i] == s[g]);
+// kmp
+// Time Complexity: O(n)
+vector<int> compute_prefix_function(const string& s) {
+	vector<int> prefix_function(s.size());
+	for (int i = 1; i < s.size(); i++) {
+		int g = prefix_function[i - 1];
+		while (g && s[i] != s[g]) g = prefix_function[g - 1];
+		prefix_function[i] = g + (s[i] == s[g]);
 	}
-	return p;
+	return prefix_function;
 }
 
-vi match(const string& s, const string& pat) {
-	vi p = pi(pat + '\0' + s), res;
-	rep(i,sz(p)-sz(s),sz(p))
-		if (p[i] == sz(pat)) res.push_back(i - 2 * sz(pat));
-	return res;
+// Time Complexity: O(n + m)
+vector<int> find_string_matches(const string& s, const string& pattern) {
+	vector<int> prefix_function = compute_prefix_function(pattern + '\0' + s);
+	vector<int> result;
+	for (int i = prefix_function.size() - s.size(); i < prefix_function.size(); i++) {
+		if (prefix_function[i] == pattern.size()) {
+			result.push_back(i - 2 * pattern.size());
+		}
+	}
+	return result;
 }
+// vector<int> matches = find_string_matches(text, pattern);
