@@ -3,64 +3,121 @@
  * Date: 2016-10-08
  * License: CC0
  * Source: me
- * Description: Segment tree with ability to add or set values of large intervals, and compute max of intervals.
- * Can be changed to other things.
- * Use with a bump allocator for better performance, and SmallPtr or implicit indices to save memory.
+ * Description: Lazy Segment Tree
  * Time: O(\log N).
- * Usage: Node* tr = new Node(v, 0, sz(v));
- * Status: stress-tested a bit
  */
-#pragma once
+template <class T>
+struct LazySegtree{
+private:
+	int n;
+	vector<T> tree;
+	vector<T> addTree, setTree;
+	
+	void buildTree(const vector<T>& v, int node, int b, int e){
+		if(b==e){tree[node] = v[b];return;}
+		int mid = (b+e)>>1, ln = node<<1, rn = ln+1;
+		buildTree(v, ln, b, mid);
+		buildTree(v, rn, mid+1, e);
+		tree[node] = merge(tree[ln],tree[rn]);
+	}
+	
+	void propagate(int node, int b, int e){
+		int ln = node<<1, rn = ln+1;
+		if(setTree[node]!=set_identity){
+			addTree[node]=add_identity;
+			tree[node] = setTree[node]*(e-b+1);
+			if(b!=e){
+				setTree[ln]=setTree[node];
+				setTree[rn]=setTree[node];
+			}
+			setTree[node]=set_identity;
+		}
+		else{
+			if(addTree[node]==add_identity) return;
+			tree[node]+=addTree[node]*(e-b+1);
+			if(b!=e){
+				if(setTree[ln]==set_identity){
+					addTree[ln]+=addTree[node];
+				}
+				else{
+					setTree[ln]+=addTree[node];
+					addTree[ln]=0;
+				}
+				if(setTree[rn]==set_identity){
+					addTree[rn]+=addTree[node];
+				}
+				else{
+					setTree[rn]+=addTree[node];
+					addTree[rn]=0;
+				}
+				
+			}
+			addTree[node]=add_identity;
+		}
+	}
 
-#include "../various/BumpAllocator.h"
+	T query(int node, int b, int e, int l, int r){
+		propagate(node, b, e);
+		if(l > e or r < b) return identity;
+		if(l<=b and r>=e) return tree[node];
+		int mid = (b+e)>>1, ln = node<<1, rn = ln+1;
+		T c1 = query(ln, b, mid, l, r);
+		T c2 = query(rn, mid+1, e, l, r);
+		return merge(c1,c2);
+	}
 
-const int inf = 1e9;
-struct Node {
-	Node *l = 0, *r = 0;
-	int lo, hi, mset = inf, madd = 0, val = -inf;
-	Node(int lo,int hi):lo(lo),hi(hi){} // Large interval of -inf
-	Node(vi& v, int lo, int hi) : lo(lo), hi(hi) {
-		if (lo + 1 < hi) {
-			int mid = lo + (hi - lo)/2;
-			l = new Node(v, lo, mid); r = new Node(v, mid, hi);
-			val = max(l->val, r->val);
+	void range_set(int node, int b, int e, int l, int r, T val){
+		propagate(node, b, e);
+		if(l > e or r < b) return;
+		if(l<=b and r>=e){
+			setTree[node]=val;
+			propagate(node, b, e);
+			return;
 		}
-		else val = v[lo];
+		int mid = (b+e)>>1, ln = node<<1, rn = ln+1;
+		range_set(ln, b, mid, l, r, val);
+		range_set(rn, mid+1, e, l, r, val);
+
+		tree[node]=merge(tree[ln],tree[rn]);
 	}
-	int query(int L, int R) {
-		if (R <= lo || hi <= L) return -inf;
-		if (L <= lo && hi <= R) return val;
-		push();
-		return max(l->query(L, R), r->query(L, R));
-	}
-	void set(int L, int R, int x) {
-		if (R <= lo || hi <= L) return;
-		if (L <= lo && hi <= R) mset = val = x, madd = 0;
-		else {
-			push(), l->set(L, R, x), r->set(L, R, x);
-			val = max(l->val, r->val);
+
+	void range_update(int node, int b, int e, int l, int r, T val){
+		propagate(node, b, e);
+		if(l > e or r < b) return;
+		if(l<=b and r>=e){
+			addTree[node]+=val;
+			propagate(node, b, e);
+			return;
 		}
+		int mid = (b+e)>>1, ln = node<<1, rn = ln+1;
+		range_update(ln, b, mid, l, r, val);
+		range_update(rn, mid+1, e, l, r, val);
+
+		tree[node]=merge(tree[ln],tree[rn]);
+		return;
 	}
-	void add(int L, int R, int x) {
-		if (R <= lo || hi <= L) return;
-		if (L <= lo && hi <= R) {
-			if (mset != inf) mset += x;
-			else madd += x;
-			val += x;
-		}
-		else {
-			push(), l->add(L, R, x), r->add(L, R, x);
-			val = max(l->val, r->val);
-		}
+	
+public:
+	T query(int l, int r){return query(1, 0, n-1, l, r);}
+	void range_set(int l, int r, T value){ range_set(1, 0, n-1, l, r, value);}
+	void range_update(int l, int r, T value){range_update(1, 0, n-1, l, r, value);}
+
+	LazySegtree(const vector<T>& input) {
+		n = input.size();
+		int sz = n<<2; // 4n
+		tree.resize(sz);
+		addTree.resize(sz, add_identity);
+		setTree.resize(sz, set_identity);
+		buildTree(input, 1, 0, n-1);
 	}
-	void push() {
-		if (!l) {
-			int mid = lo + (hi - lo)/2;
-			l = new Node(lo, mid); r = new Node(mid, hi);
-		}
-		if (mset != inf)
-			l->set(lo,hi,mset), r->set(lo,hi,mset), mset = inf;
-		else if (madd)
-			l->add(lo,hi,madd), r->add(lo,hi,madd), madd = 0;
-	}
+	
+	T add_identity = 0;
+	T set_identity = 0;
+	T identity = 0;
+	T merge(const T& a, const T& b) { return a + b; }
 };
+
+/* LazySegtree<int> segTree(v);
+segTree.query(left-1, right-1);
+segTree.range_set(left-1, right-1, value);
+segTree.range_update(left-1, right-1, value); */

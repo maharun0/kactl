@@ -11,27 +11,34 @@
  */
 #pragma once
 
-void add(int ind, int end) { ... } // add a[ind] (end = 0 or 1)
-void del(int ind, int end) { ... } // remove a[ind]
-int calc() { ... } // compute current answer
+// mos
+// pbds set // more like a indexed set
+#include <ext/pb_ds/assoc_container.hpp> 
+#include <ext/pb_ds/tree_policy.hpp>
+using namespace __gnu_pbds;
+typedef tree<int, null_type, less<int>,
+rb_tree_tag,tree_order_statistics_node_update> pbds;
 
-vi mo(vector<pii> Q) {
-	int L = 0, R = 0, blk = 350; // ~N/sqrt(Q)
-	vi s(sz(Q)), res = s;
-#define K(x) pii(x.first/blk, x.second ^ -(x.first/blk & 1))
-	iota(all(s), 0);
-	sort(all(s), [&](int s, int t){ return K(Q[s]) < K(Q[t]); });
-	for (int qi : s) {
-		pii q = Q[qi];
-		while (L > q.first) add(--L, 0);
-		while (R < q.second) add(R++, 1);
-		while (L < q.first) del(L++, 0);
-		while (R > q.second) del(--R, 1);
-		res[qi] = calc();
-	}
-	return res;
+void getMoAnswer(vector<int>& v, vector<array<int, 5>>& queries, vector<int>& ans) {
+    pbds oset; // ordered set
+    auto add = [&](int x) -> void { oset.insert(v[x]); };
+    auto remove = [&](int x) -> void { oset.erase(v[x]); };
+    auto get = [&](int k) -> int { return *oset.find_by_order(k-1); };
+
+    sort(all(queries));
+    int left = 0, right = -1;
+    for (auto& [b, r, l, idx, k] : queries) {
+        while(right < r) add(++right);  while(right > r) remove(right--);
+        while(left < l) remove(left++); while(left > l) add(--left);
+        ans[idx] = get(k);
+    }
 }
+// v = main array, // N = v.size()
+queries.push_back({l/sqrtN, r, l, idx, k}); // for each query
+// sort quiries according to -> starting block, and then r wise sort
+// gives k'th smallest number's index in [l, r) rangereturn res;
 
+// tree
 vi moTree(vector<array<int, 2>> Q, vector<vi>& ed, int root=0){
 	int N = sz(ed), pos[2] = {}, blk = 350; // ~N/sqrt(Q)
 	vi s(sz(Q)), res = s, I(N), L(N), R(N), in(N), par(N);
