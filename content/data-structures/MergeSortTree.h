@@ -1,6 +1,6 @@
 /**
  * Author: Maharun Afroz
- * Time: n log n + (log n)^2
+ * Time: n log n + (log n)2
  * Description: Merge Sort Tree
  */
 template <class T>
@@ -63,11 +63,6 @@ public:
         buildTree(input, 1, 0, n-1);
     }
 };
-
-/*
-    vector<int> v(n); cin >> v;
-
-    SegmentTree<int> segTree(v); // All 0 based index
-
-    segTree.query(left - 1, right - 1, k);
-*/
+// vector<int> v(n); cin >> v;
+// SegmentTree<int> segTree(v); // All 0 based index
+// segTree.query(left - 1, right - 1, k);

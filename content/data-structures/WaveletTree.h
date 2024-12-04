@@ -1,3 +1,8 @@
+/**
+ * Author: Maharun Afroz
+ * Time: Preprocess O(n log (max val)), other query O(max val)
+ * Description: wavelet tree
+ */
 // Wavelet Tree
 const int MAXN = (int)3e5 + 9;
 const int MAXV = (int)1e9 + 9; // maximum value of any element in array
@@ -78,7 +83,7 @@ wavelet_tree t;
 // O (n log ( max_ele(array) )), array a changes after init
 // t.init(a + 1, a + n + 1, -MAXV, MAXV); 
 
-//     [l, r] range, below O( max_ele(array)
+//  [l, r] range, below O( max_ele(array)
 // t.kth(l, r, k); // kth smallest element
 // t.LTE(l, r, k); // count values <= k
 // t.count(l, r, k); // count values == k

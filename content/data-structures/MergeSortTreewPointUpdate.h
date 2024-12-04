@@ -1,6 +1,6 @@
 /**
  * Author: Maharun Afroz
- * Time: n log n + (log n)^2
+ * Time: n log n + (log n)2
  * Description: Merge Sort Tree (w point update)
  */
 #include<ext/pb_ds/assoc_container.hpp>
